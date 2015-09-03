@@ -2,6 +2,8 @@ namespace Sharpbase.EventStreaming
 {
     internal enum EventType
     {
-        ValueChanged
+        ValueChanged,
+
+        ChildAdded
     }
 }

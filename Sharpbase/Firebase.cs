@@ -70,12 +70,14 @@ namespace Sharpbase
         {
             add
             {
-                
+                var contract = new ChildAddedEventContract(this, value);
+                client.AddEventListener(contract);
             }
 
             remove
             {
-                
+                var contract = new ChildAddedEventContract(this, value);
+                client.RemoveEventListener(contract);
             }
         }
 

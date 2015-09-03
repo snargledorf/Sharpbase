@@ -37,6 +37,7 @@
   <ItemGroup>
     <Compile Include="ArgUtils.cs" />
     <Compile Include="Cache.cs" />
+    <Compile Include="EventStreaming\ChildAddedEventContract.cs" />
     <Compile Include="EventStreaming\ChangeEventArgs.cs" />
     <Compile Include="EventStreaming\ChildAddedEventArgs.cs" />
     <Compile Include="EventStreaming\EventListenerRequest.cs" />
