@@ -54,9 +54,6 @@
     <Compile Include="TokenGeneration\TokenOptions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="FirebaseTokenGenerator">
-      <HintPath>..\libraries\firebase-token-generator-dotNet\FirebaseTokenGenerator\bin\Debug\FirebaseTokenGenerator.dll</HintPath>
-    </Reference>
     <Reference Include="JWT.Portable, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\JWT.Portable.1.0.2-beta\lib\portable-net403+sl5+netcore45+wp8+MonoAndroid1+MonoTouch1\JWT.Portable.dll</HintPath>
       <Private>True</Private>
