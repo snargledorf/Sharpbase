@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 
+using Sharpbase.EventStreaming;
+
 namespace Sharpbase
 {
     public partial class Firebase
     {
-        private readonly IContext context;
-
         private IFirebaseClient client;
 
         public Firebase(string firebaseUrl)
@@ -15,21 +15,24 @@ namespace Sharpbase
         }
 
         public Firebase(string firebaseUrl, IContext context)
-            : this(new FirebaseClient(firebaseUrl, context), context, new Path())
+            : this(FirebaseUrl.Parse(firebaseUrl), context)
         {
         }
 
-        private Firebase(Firebase firebase, Path child)
-            : this(firebase.client, firebase.context, child)
+        internal Firebase(FirebaseUrl firebaseUrl, IContext context)
+            : this(new FirebaseClient(firebaseUrl.BaseUrl, context), firebaseUrl.Path)
         {
         }
 
-        private Firebase(IFirebaseClient client, IContext context, Path path)
+        internal Firebase(IFirebaseClient client, Path path)
         {
             this.client = client;
-            this.context = context;
             Path = path;
         }
+
+        public delegate void ValueChangedEvent(ValueChangedEventArgs snapshot);
+        public delegate void ChildAddedEvent(ChildAddedEventArgs snapshot);
+        public delegate void CompleteAction(FirebaseException firebaseException, Firebase reference);
 
         public string Key => Path.LastSegment;
 
@@ -39,71 +42,137 @@ namespace Sharpbase
         {
             get
             {
-                return context.AuthToken;
+                return client.Context.AuthToken;
             }
 
             set
             {
-                context.AuthToken = value;
+                client.Context.AuthToken = value;
             }
         }
         
-        public event Action<Snapshot> ValueChanged
+        public event ValueChangedEvent ValueChanged
         {
             add
             {
-                client.AddValueChangedListener(Path, value);
+                var contract = new ValueChangedEventContract(this, value);
+                client.AddEventListener(contract);
             }
+
             remove
             {
-                client.RemoveEventListener(Path, value);
+                var contract = new ValueChangedEventContract(this, value);
+                client.RemoveEventListener(contract);
             }
         }
 
-        public void Set(object obj, Action<Error, Firebase> complete = null)
+        public event ChildAddedEvent ChildAdded
+        {
+            add
+            {
+                
+            }
+
+            remove
+            {
+                
+            }
+        }
+
+        public void Set(object obj, CompleteAction complete = null)
         {
             Result result = SetAsync(obj).Result;
-            complete?.Invoke(result.Error, this);
+            complete?.Invoke(result.Error, result.Reference);
         }
 
-        public Task<Result> SetAsync(object obj)
+        public Task<Result> SetAsync(object content)
         {
-            return client.Set(Path, obj, AuthToken);
+            return client.Set(this, content);
         }
 
-        public void Remove(Action complete = null)
+        public void Remove(CompleteAction complete = null)
         {
-            RemoveAsync().Wait();
-            complete?.Invoke();
+            Result result = RemoveAsync().Result;
+            complete?.Invoke(result.Error, result.Reference);
         }
 
-        public Task RemoveAsync()
+        public Task<Result> RemoveAsync()
         {
-            return client.Remove(Path, AuthToken);
+            return client.Remove(this);
         }
 
-        public Firebase Push(object obj = null)
+        public Firebase Push(object content = null)
         {
-            return PushAsync(obj).Result;
+            return PushAsync(content).Result;
         }
 
-        public async Task<Firebase> PushAsync(object obj = null)
+        public async Task<Firebase> PushAsync(object content = null)
         {
-            Result result = await client.Push(Path, obj, AuthToken);
-            if (!result.Success)
-                throw result.Error.Exception;
-
-            var pushResult = result.Snapshot.Value<PushResult>();
-
-            return Child(pushResult.Name);
+            return await client.Push(this, content);
         }
 
         public Firebase Child(string childPath)
         {
-            return new Firebase(this, Path.Child(new Path(childPath)));
+            return new Firebase(client, Path.Child(new Path(childPath)));
         }
     }
 
+    // Equality implementation
+    public partial class Firebase : IEquatable<Firebase>
+    {
+
+        public bool Equals(Firebase other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+            return disposed == other.disposed && Equals(Path, other.Path);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+            return Equals((Firebase)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = disposed.GetHashCode();
+                hashCode = (hashCode * 397) ^ (Path?.GetHashCode() ?? 0);
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(Firebase left, Firebase right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(Firebase left, Firebase right)
+        {
+            return !Equals(left, right);
+        }
+    }
+
+    // IDisposable implementation
     public partial class Firebase : IDisposable
     {
         private bool disposed;
@@ -111,6 +180,7 @@ namespace Sharpbase
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         private void Dispose(bool disposing)
@@ -120,12 +190,18 @@ namespace Sharpbase
 
             if (disposing)
             {
-                IFirebaseClient c = client;
+                IDisposable c = client;
                 client = null;
                 c?.Dispose();
             }
 
             disposed = true;
+        }
+
+        private void CheckDisposed()
+        {
+            if (disposed)
+                throw new ObjectDisposedException(nameof(Firebase));
         }
     }
 }

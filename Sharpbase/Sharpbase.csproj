@@ -35,13 +35,24 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="EventListener.cs" />
+    <Compile Include="ArgUtils.cs" />
+    <Compile Include="Cache.cs" />
+    <Compile Include="EventStreaming\ChangeEventArgs.cs" />
+    <Compile Include="EventStreaming\ChildAddedEventArgs.cs" />
+    <Compile Include="EventStreaming\EventListenerRequest.cs" />
+    <Compile Include="EventStreaming\EventContract.cs" />
+    <Compile Include="EventStreaming\EventType.cs" />
     <Compile Include="Exceptions\AuthDeniedException.cs" />
     <Compile Include="AuthToken.cs" />
     <Compile Include="Context.cs" />
-    <Compile Include="Error.cs" />
+    <Compile Include="FirebaseException.cs" />
     <Compile Include="Firebase.cs" />
     <Compile Include="FirebaseClient.cs" />
+    <Compile Include="FirebaseEventArgs.cs" />
+    <Compile Include="EventStreaming\IEventContract.cs" />
+    <Compile Include="FirebaseUrl.cs" />
+    <Compile Include="PushRequest.cs" />
+    <Compile Include="Request.cs" />
     <Compile Include="TokenGeneration\FirebaseTokenGenerator.cs" />
     <Compile Include="IContext.cs" />
     <Compile Include="IFirebaseClient.cs" />
@@ -49,10 +60,12 @@
     <Compile Include="JsonDotNetSerializer.cs" />
     <Compile Include="Path.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PushResult.cs" />
+    <Compile Include="PushResponse.cs" />
     <Compile Include="Result.cs" />
     <Compile Include="Snapshot.cs" />
     <Compile Include="TokenGeneration\TokenOptions.cs" />
+    <Compile Include="EventStreaming\ValueChangedEventContract.cs" />
+    <Compile Include="EventStreaming\ValueChangedEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="JWT.Portable, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">

@@ -6,24 +6,16 @@ namespace Sharpbase
     {
         public static readonly AuthToken Empty = new AuthToken();
 
-        private readonly string token;
-
         public AuthToken(string token)
         {
-            this.token = token;
+            Token = token;
         }
 
-        public string Token
-        {
-            get
-            {
-                return token;
-            }
-        }
+        public string Token { get; }
 
         public override string ToString()
         {
-            return token;
+            return Token;
         }
 
         public static bool operator ==(AuthToken left, AuthToken right)
@@ -38,7 +30,7 @@ namespace Sharpbase
 
         public bool Equals(AuthToken other)
         {
-            return string.Equals(token, other.token);
+            return string.Equals(Token, other.Token);
         }
 
         public override bool Equals(object obj)
@@ -52,7 +44,7 @@ namespace Sharpbase
 
         public override int GetHashCode()
         {
-            return (token != null ? token.GetHashCode() : 0);
+            return (Token != null ? Token.GetHashCode() : 0);
         }
     }
 }

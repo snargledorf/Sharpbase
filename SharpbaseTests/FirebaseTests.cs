@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Sharpbase;
+using Sharpbase.EventStreaming;
 using Sharpbase.Exceptions;
 
 namespace SharpbaseTests
@@ -12,7 +13,6 @@ namespace SharpbaseTests
     [TestClass]
     public class FirebaseTests
     {
-
         private Firebase firebase;
 
         private User user;
@@ -87,7 +87,7 @@ namespace SharpbaseTests
             var reset = new ManualResetEventSlim();
 
             Firebase child = firebase.Child(TestData.DefaultChild);
-            Error error = null;
+            FirebaseException error = null;
             Firebase childRef = null;
 
             child.Set(user,
@@ -147,18 +147,64 @@ namespace SharpbaseTests
 
             child.Set(true);
 
-            Snapshot snap = null;
-            child.ValueChanged += snapshot =>
+            ValueChangedEventArgs a = null;
+
+            Firebase.ValueChangedEvent @event = (args) =>
             {
-                snap = snapshot;
-                reset.Set();
+                if (args.Snapshot.Reference == child)
+                {
+                    a = args;
+                    reset.Set();
+                }
             };
+
+            child.ValueChanged += @event;
 
             bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
 
+            child.ValueChanged -= @event;
+
             Assert.IsFalse(timedOut, "timedOut");
-            Assert.IsNotNull(snap, "snap != null");
-            Assert.IsTrue(snap.Value<bool>(), "snap.Value<bool>()");
+            CheckChangeEventArgs(child, a);
+        }
+
+        [TestMethod]
+        public void ChildAdded()
+        {
+            var reset = new ManualResetEventSlim();
+
+            Firebase child = firebase.Child(TestData.DefaultChild);
+
+            child.Set(true);
+
+            ChildAddedEventArgs a = null;
+
+            Firebase.ChildAddedEvent @event = (args) =>
+            {
+                a = args;
+                reset.Set();
+            };
+
+            child.ChildAdded += @event;
+
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
+
+            child.ChildAdded -= @event;
+
+            Assert.IsFalse(timedOut, "timedOut");
+            CheckChangeEventArgs(child, a);
+        }
+
+        private static void CheckChangeEventArgs(Firebase reference, ChangeEventArgs args)
+        {
+            Assert.IsNull(args.FirebaseException, "a.FirebaseException == null");
+            Assert.IsNotNull(args, "a != null");
+            Assert.IsNotNull(args.Snapshot, "a.Snapshot != null");
+            Assert.AreEqual(reference, args.Snapshot.Reference, "child == a.Snapshot.Reference");
+            Assert.AreEqual(reference.Key, args.Snapshot.Key, "child.Key == a.Snapshot.Key");
+            Assert.AreEqual(reference.Key, args.Snapshot.Key, "child.Key == a.Snapshot.Key");
+            Assert.IsTrue(args.Snapshot.Exists);
+            Assert.IsTrue(args.Snapshot.Value<bool>(), "snap.Value<bool>()");
         }
     }
 }

@@ -1,56 +1,106 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Net;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-using Sharpbase.Exceptions;
+using Sharpbase.EventStreaming;
 
 namespace Sharpbase
 {
     internal partial class FirebaseClient : IFirebaseClient
     {
-        private readonly IContext context;
-
         private HttpClient httpClient;
 
-        public FirebaseClient(string baseUrl, IContext context)
-        {
-            this.context = context;
+        private Dictionary<IEventContract, EventListenerRequest> eventListenerRequests = new Dictionary<IEventContract, EventListenerRequest>();
 
-            var baseUri = new Uri(baseUrl);
-            httpClient = CreateHttpClient(baseUri);
+        public FirebaseClient(Uri baseUrl, IContext context)
+        {
+            Context = context;
+            httpClient = CreateHttpClient(baseUrl);
         }
 
-        public Task Remove(Path path, AuthToken token)
-        {
-            CheckDisposed();
-            return SendRequest(HttpMethod.Delete, path, token);
-        }
+        public IContext Context { get; }
 
-        public Task<Result> Push(Path path, object obj, AuthToken token)
+        public Task<Result> Remove(Firebase reference)
         {
             CheckDisposed();
+            ArgUtils.CheckForNull(reference, nameof(reference));
 
-            // Default the value to false, otherwise the request will fail.
-            return SendRequest(HttpMethod.Post, path, token, obj ?? false);
+            var request = new Request(reference, HttpMethod.Delete);
+            return PerformRequest(request);
         }
-
-        public Task<Result> Set(Path path, object obj, AuthToken token)
+        
+        public Task<Result> Set(Firebase reference, object content)
         {
             CheckDisposed();
 
-            return SendRequest(HttpMethod.Put, path, token, obj);
+            ArgUtils.CheckForNull(reference, nameof(reference));
+            ArgUtils.CheckForNull(content, nameof(content));
+
+            var request = new Request(reference, HttpMethod.Put, content);
+            return PerformRequest(request);
         }
 
-        public void AddValueChangedListener(Path path, Action<Snapshot> listener)
+        public async Task<Firebase> Push(Firebase reference, object content = null)
         {
+            CheckDisposed();
 
+            ArgUtils.CheckForNull(reference, nameof(reference));
+
+            var request = new PushRequest(reference, content);
+
+            Result result = await PerformRequest(request);
+            if (!result.Success)
+                throw result.Error;
+
+            return result.Reference;
         }
 
-        public void RemoveEventListener(Path path, Action<Snapshot> listener)
+        public async void AddEventListener(IEventContract contract)
         {
-            throw new NotImplementedException();
+            CheckDisposed();
+
+            ArgUtils.CheckForNull(contract, nameof(contract));
+
+            if (eventListenerRequests.ContainsKey(contract))
+                return;
+
+            var eventListenerRequest = new EventListenerRequest(contract, new Cache());
+            eventListenerRequests.Add(contract, eventListenerRequest);
+
+            HttpRequestMessage requestMessage = eventListenerRequest.CreateRequestMessage(Context);
+            HttpResponseMessage httpResponseMessage =
+                await SendRequestMessage(requestMessage, HttpCompletionOption.ResponseHeadersRead);
+            eventListenerRequest.CreateResult(httpResponseMessage, Context);
+        }
+
+        public void RemoveEventListener(IEventContract contract)
+        {
+            CheckDisposed();
+
+            ArgUtils.CheckForNull(contract, nameof(contract));
+
+            EventListenerRequest eventListenerRequest;
+            if (!eventListenerRequests.TryGetValue(contract, out eventListenerRequest))
+                return;
+
+            eventListenerRequests.Remove(contract);
+
+            eventListenerRequest.Stop();
+        }
+
+        private async Task<Result> PerformRequest(Request request)
+        {
+            try
+            {
+                HttpRequestMessage requestMessage = request.CreateRequestMessage(Context);
+                HttpResponseMessage httpResponseMessage = await SendRequestMessage(requestMessage);
+                return request.CreateResult(httpResponseMessage, Context);
+            }
+            catch (Exception ex)
+            {
+                return new Result(new FirebaseException(ex.Message, ex));
+            }
         }
 
         private static HttpClient CreateHttpClient(Uri baseUri)
@@ -65,89 +115,13 @@ namespace Sharpbase
             return client;
         }
 
-        private static string CreateRequestUri(Path path, AuthToken token)
+        private Task<HttpResponseMessage> SendRequestMessage(HttpRequestMessage request, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead)
         {
-            return token != AuthToken.Empty
-                       ? string.Format("{0}.json?auth={1}", path, token)
-                       : string.Format("{0}.json", path);
-        }
-
-        /// <summary>
-        /// Throws an exception if the requeat was not successfull
-        /// </summary>
-        /// <param name="responseMessage">The response message to check</param>
-        private static void CheckResponse(HttpResponseMessage responseMessage)
-        {
-            if (responseMessage.IsSuccessStatusCode)
-                return;
-
-            Exception exception = GetFailedRequestException(responseMessage);
-
-            // If there isn't a defined exception then throw the default one.
-            if (exception == null)
-                responseMessage.EnsureSuccessStatusCode();
-
-            Debug.Assert(exception != null, "exception != null");
-
-            throw exception;
-        }
-
-        private static Exception GetFailedRequestException(HttpResponseMessage responseMessage)
-        {
-            switch (responseMessage.StatusCode)
-            {
-                case HttpStatusCode.Unauthorized:
-                    return new AuthDeniedException();
-            }
-            return null;
-        }
-
-        private async Task<Result> SendRequest(HttpMethod method, Path path, AuthToken token, object content = null)
-        {
-            try
-            {
-                HttpRequestMessage request = CreateRequest(method, path, token, content);
-
-                HttpResponseMessage responseMessage = await DoSendRequest(request);
-
-                CheckResponse(responseMessage);
-
-                Snapshot snapshot = await CreateSnapshot(responseMessage);
-
-                return new Result { Snapshot = snapshot };
-            }
-            catch (Exception ex)
-            {
-                return new Result { Error = new Error { Exception = ex } };
-            }
-        }
-
-        private Task<HttpResponseMessage> DoSendRequest(HttpRequestMessage request)
-        {
-            return httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead);
-        }
-
-        private HttpRequestMessage CreateRequest(HttpMethod method, Path path, AuthToken token, object content)
-        {
-            string requestUri = CreateRequestUri(path, token);
-            var request = new HttpRequestMessage(method, requestUri);
-
-            if (content != null)
-            {
-                string json = context.Serializer.Serialize(content);
-                request.Content = new StringContent(json);
-            }
-
-            return request;
-        }
-
-        private async Task<Snapshot> CreateSnapshot(HttpResponseMessage responseMessage)
-        {
-            string json = await responseMessage.Content.ReadAsStringAsync();
-            return new Snapshot(json, context);
+            return httpClient.SendAsync(request, completionOption);
         }
     }
 
+    // IDisposable implementaion
     internal partial class FirebaseClient : IDisposable
     {
         private bool disposed;
@@ -172,7 +146,7 @@ namespace Sharpbase
             {
                 HttpClient client = httpClient;
                 httpClient = null;
-                if (client != null) client.Dispose();
+                client?.Dispose();
             }
 
             disposed = true;

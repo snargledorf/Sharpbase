@@ -1,15 +1,21 @@
 ﻿using System;
 using System.Threading.Tasks;
 
+using Sharpbase.EventStreaming;
+
 namespace Sharpbase
 {
     internal interface IFirebaseClient : IDisposable
     {
-        Task Remove(Path path, AuthToken authToken);
-        Task<Result> Push(Path path, object obj, AuthToken authToken);
-        Task<Result> Set(Path path, object obj, AuthToken authToken);
+        IContext Context { get; }
 
-        void AddValueChangedListener(Path path, Action<Snapshot> listener);
-        void RemoveEventListener(Path path, Action<Snapshot> listener);
+        Task<Result> Remove(Firebase reference);
+
+        Task<Result> Set(Firebase reference, object content = null);
+
+        Task<Firebase> Push(Firebase reference, object content = null);
+
+        void AddEventListener(IEventContract contract);
+        void RemoveEventListener(IEventContract contract);
     }
 }

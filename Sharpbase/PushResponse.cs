@@ -1,6 +1,6 @@
 ﻿namespace Sharpbase
 {
-    internal class PushResult
+    internal class PushResponse
     {
         public string Name { get; set; }
     }
