@@ -11,7 +11,7 @@ namespace Sharpbase
     {
         private HttpClient httpClient;
 
-        private Dictionary<IEventContract, EventListenerRequest> eventListenerRequests = new Dictionary<IEventContract, EventListenerRequest>();
+        private readonly Dictionary<IEventContract, EventListenerRequest> eventListenerRequests = new Dictionary<IEventContract, EventListenerRequest>();
 
         public FirebaseClient(Uri baseUrl, IContext context)
         {
