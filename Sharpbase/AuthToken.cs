@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Sharpbase
 {
@@ -20,16 +19,6 @@ namespace Sharpbase
             {
                 return token;
             }
-        }
-
-        public static AuthToken ForUsernameAndPassword(string username, string password, string secret)
-        {
-            var tokenGenerator = new TokenGeneration.FirebaseTokenGenerator(secret);
-
-            var tokenPayload = new Dictionary<string, object> { { "username", username }, { "password", password } };
-            string token = tokenGenerator.CreateToken(tokenPayload);
-
-            return new AuthToken(token);
         }
 
         public override string ToString()
