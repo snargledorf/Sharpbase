@@ -5,6 +5,8 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Sharpbase.JsonSerilization;
+
 namespace Sharpbase.EventStreaming
 {
     internal partial class EventListenerRequest : Request
@@ -67,6 +69,7 @@ namespace Sharpbase.EventStreaming
 
                         string eventName = ParseEventLine(eventLine);
                         string json = ParseEventLine(dataLine);
+                        IJsonNode tree = context.Serializer.Deserialize(json);
                     }
                     else
                     {

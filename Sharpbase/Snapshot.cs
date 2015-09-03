@@ -1,3 +1,5 @@
+using Sharpbase.JsonSerilization;
+
 namespace Sharpbase
 {
     public class Snapshot
@@ -24,9 +26,9 @@ namespace Sharpbase
             return Exists ? context.Serializer.Deserialize<T>(json) : default(T);
         }
 
-        public object Value()
+        public IJsonNode Value()
         {
-            return Exists ? context.Serializer.Deserilize(json) : null;
+            return Exists ? context.Serializer.Deserialize(json) : null;
         }
     }
 }

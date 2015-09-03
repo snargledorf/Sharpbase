@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
-namespace Sharpbase
+namespace Sharpbase.JsonSerilization.JsonDotNetSerializer
 {
     internal class JsonDotNetSerializer : IJsonSerializer
     {
@@ -9,9 +10,10 @@ namespace Sharpbase
             return JsonConvert.DeserializeObject<T>(json);
         }
 
-        public object Deserilize(string json)
+        public IJsonNode Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject(json);
+            var o = (JObject)JsonConvert.DeserializeObject(json);
+            return new JsonDotNetJsonNode(o);
         }
 
         public string Serialize(object obj)

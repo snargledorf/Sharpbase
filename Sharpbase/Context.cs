@@ -1,4 +1,7 @@
-﻿namespace Sharpbase
+﻿using Sharpbase.JsonSerilization;
+using Sharpbase.JsonSerilization.JsonDotNetSerializer;
+
+namespace Sharpbase
 {
     public class Context : IContext
     {
