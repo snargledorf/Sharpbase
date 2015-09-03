@@ -1,9 +1,11 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Sharpbase;
+using Sharpbase.Exceptions;
 
 namespace SharpbaseTests
 {
@@ -29,14 +31,24 @@ namespace SharpbaseTests
             user = null;
 
             // Remove all data from firebase
+            firebase.AuthToken = new AuthToken(TestData.Secret); // Auth as admin to ensure we can delete everything
             firebase.Remove();
             firebase = null;
         }
 
         [TestMethod]
+        public void Child()
+        {
+            Firebase childRef = firebase.Child(TestData.DefaultChild);
+
+            Assert.IsNotNull(childRef);
+            Assert.AreEqual(TestData.DefaultChild, childRef.Key);
+        }
+
+        [TestMethod]
         public void Push()
         {
-            Firebase pushRef = firebase.Push();
+            Firebase pushRef = firebase.Child(TestData.DefaultChild).Push();
 
             Assert.IsNotNull(pushRef);
             Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
@@ -45,25 +57,16 @@ namespace SharpbaseTests
         [TestMethod]
         public async Task PushAsync()
         {
-            Firebase pushRef = await firebase.PushAsync();
+            Firebase pushRef = await firebase.Child(TestData.DefaultChild).PushAsync();
 
             Assert.IsNotNull(pushRef);
             Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
         }
 
         [TestMethod]
-        public void Child()
-        {
-            Firebase childRef = firebase.Child(TestData.ChildKey);
-
-            Assert.IsNotNull(childRef);
-            Assert.AreEqual(TestData.ChildKey, childRef.Key);
-        }
-
-        [TestMethod]
         public void PushValue()
         {
-            Firebase pushRef = firebase.Push(user);
+            Firebase pushRef = firebase.Child(TestData.DefaultChild).Push(user);
 
             Assert.IsNotNull(pushRef);
             Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
@@ -72,7 +75,7 @@ namespace SharpbaseTests
         [TestMethod]
         public async Task PushAsyncValue()
         {
-            Firebase pushRef = await firebase.PushAsync(user);
+            Firebase pushRef = await firebase.Child(TestData.DefaultChild).PushAsync(user);
 
             Assert.IsNotNull(pushRef);
             Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
@@ -83,7 +86,7 @@ namespace SharpbaseTests
         {
             var reset = new ManualResetEventSlim();
 
-            Firebase child = firebase.Child(TestData.ChildKey);
+            Firebase child = firebase.Child(TestData.DefaultChild);
             Error error = null;
             Firebase childRef = null;
 
@@ -100,17 +103,38 @@ namespace SharpbaseTests
             Assert.IsNull(error);
             Assert.IsNotNull(childRef);
             Assert.IsNotNull(childRef.Key);
-            Assert.AreEqual(TestData.ChildKey, childRef.Key);
+            Assert.AreEqual(TestData.DefaultChild, childRef.Key);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AuthDeniedException))]
+        public void WriteToProtected()
+        {
+            try
+            {
+                firebase.Child(TestData.ProtectedChild).Push();
+            }
+            catch (Exception e)
+            {
+                throw e.InnerException;
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AuthDeniedException))]
+        public async Task WriteToProtectedAsync()
+        {
+            await firebase.Child(TestData.ProtectedChild).PushAsync();
         }
 
         [TestMethod]
         public void AuthSecret()
         {
-            firebase.AuthWithCustomToken(TestData.Secret,
-                (e, a) =>
-                    {
-                        
-                    });
+            firebase.AuthToken = new AuthToken(TestData.Secret);
+            Firebase push = firebase.Child(TestData.ProtectedChild).Push();
+
+            Assert.IsNotNull(push);
+            Assert.IsFalse(string.IsNullOrEmpty(push.Key));
         }
     }
 }

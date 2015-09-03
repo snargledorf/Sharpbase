@@ -7,7 +7,7 @@ namespace Sharpbase
     {
         private static readonly string[] EmptyPath = new string[0];
 
-        private string[] parts;
+        private readonly string[] parts;
 
         public Path(string path)
         {
@@ -41,14 +41,14 @@ namespace Sharpbase
             return new Path(newParts);
         }
 
-        private string[] GetPathParts(string path)
-        {
-            return path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-        }
-
         public override string ToString()
         {
             return "/" + string.Join("/", parts);
+        }
+
+        private static string[] GetPathParts(string path)
+        {
+            return path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
         }
     }
 }

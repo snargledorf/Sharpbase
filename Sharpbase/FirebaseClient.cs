@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+
+using Sharpbase.Exceptions;
 
 namespace Sharpbase
 {
@@ -19,25 +22,25 @@ namespace Sharpbase
             httpClient = CreateHttpClient(baseUri);
         }
 
-        public Task Remove(Path path)
+        public Task Remove(Path path, AuthToken token)
         {
             CheckDisposed();
-            return SendRequest(HttpMethod.Delete, path);
+            return SendRequest(HttpMethod.Delete, path, token);
         }
 
-        public Task<Result> Push(Path path, object obj)
+        public Task<Result> Push(Path path, object obj, AuthToken token)
         {
             CheckDisposed();
 
             // Default the value to false, otherwise the request will fail.
-            return SendRequest(HttpMethod.Post, path, obj ?? false);
+            return SendRequest(HttpMethod.Post, path, token, obj ?? false);
         }
 
-        public Task<Result> Set(Path path, object obj)
+        public Task<Result> Set(Path path, object obj, AuthToken token)
         {
             CheckDisposed();
 
-            return SendRequest(HttpMethod.Put, path, obj);
+            return SendRequest(HttpMethod.Put, path, token, obj);
         }
 
         private static HttpClient CreateHttpClient(Uri baseUri)
@@ -52,22 +55,52 @@ namespace Sharpbase
             return client;
         }
 
-        private static string CreateRequestUri(Path path)
+        private static string CreateRequestUri(Path path, AuthToken token)
         {
-            string requestUri = path.ToString();
-            if (!requestUri.EndsWith(".json"))
-                requestUri += ".json";
-            return requestUri;
+            return token != AuthToken.Empty
+                       ? string.Format("{0}.json?auth={1}", path, token)
+                       : string.Format("{0}.json", path);
         }
 
-        private async Task<Result> SendRequest(HttpMethod method, Path path, object content = null)
+        /// <summary>
+        /// Throws an exception if the requeat was not successfull
+        /// </summary>
+        /// <param name="responseMessage">The response message to check</param>
+        private static void CheckResponse(HttpResponseMessage responseMessage)
+        {
+            if (responseMessage.IsSuccessStatusCode)
+                return;
+
+            Exception exception = GetFailedRequestException(responseMessage);
+
+            // If there isn't a defined exception then throw the default one.
+            if (exception == null)
+                responseMessage.EnsureSuccessStatusCode();
+
+            Debug.Assert(exception != null, "exception != null");
+
+            throw exception;
+        }
+
+        private static Exception GetFailedRequestException(HttpResponseMessage responseMessage)
+        {
+            switch (responseMessage.StatusCode)
+            {
+                case HttpStatusCode.Unauthorized:
+                    return new AuthDeniedException();
+            }
+            return null;
+        }
+
+        private async Task<Result> SendRequest(HttpMethod method, Path path, AuthToken token, object content = null)
         {
             try
             {
-                HttpRequestMessage request = CreateRequest(method, path, content);
+                HttpRequestMessage request = CreateRequest(method, path, token, content);
 
                 HttpResponseMessage responseMessage = await DoSendRequest(request);
-                responseMessage.EnsureSuccessStatusCode();
+
+                CheckResponse(responseMessage);
 
                 Snapshot snapshot = await CreateSnapshot(responseMessage);
 
@@ -79,14 +112,14 @@ namespace Sharpbase
             }
         }
 
-        private ConfiguredTaskAwaitable<HttpResponseMessage> DoSendRequest(HttpRequestMessage request)
+        private Task<HttpResponseMessage> DoSendRequest(HttpRequestMessage request)
         {
-            return httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
+            return httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead);
         }
 
-        private HttpRequestMessage CreateRequest(HttpMethod method, Path path, object content)
+        private HttpRequestMessage CreateRequest(HttpMethod method, Path path, AuthToken token, object content)
         {
-            string requestUri = CreateRequestUri(path);
+            string requestUri = CreateRequestUri(path, token);
             var request = new HttpRequestMessage(method, requestUri);
 
             if (content != null)

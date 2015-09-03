@@ -3,15 +3,12 @@
     public class Context : IContext
     {
         public Context()
-            : this(new JsonDotNetSerializer())
         {
+            Serializer = new JsonDotNetSerializer();
         }
 
-        public Context(IJsonSerializer serializer)
-        {
-            Serializer = serializer;
-        }
+        public AuthToken AuthToken { get; set; }
 
-        public IJsonSerializer Serializer { get; private set; }
+        public IJsonSerializer Serializer { get; set; }
     }
 }

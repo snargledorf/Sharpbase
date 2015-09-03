@@ -5,30 +5,31 @@ namespace Sharpbase
 {
     public partial class Firebase
     {
-        private static readonly IContext DefaultContext = new Context(new JsonDotNetSerializer());
-        
         private readonly Path path;
+
+        private readonly IContext context;
 
         private IFirebaseClient client;
 
         public Firebase(string firebaseUrl)
-            : this (firebaseUrl, DefaultContext)
+            : this (firebaseUrl, new Context())
         {
         }
 
         public Firebase(string firebaseUrl, IContext context)
-            : this(new FirebaseClient(firebaseUrl, context))
+            : this(new FirebaseClient(firebaseUrl, context), context, new Path())
         {
         }
 
-        internal Firebase(IFirebaseClient client)
-            : this(client, new Path())
+        private Firebase(Firebase firebase, Path child)
+            : this(firebase.client, firebase.context, child)
         {
         }
 
-        internal Firebase(IFirebaseClient client, Path path)
+        private Firebase(IFirebaseClient client, IContext context, Path path)
         {
             this.client = client;
+            this.context = context;
             this.path = path;
         }
 
@@ -37,6 +38,19 @@ namespace Sharpbase
             get
             {
                 return path.LastSegment;
+            }
+        }
+
+        public AuthToken AuthToken
+        {
+            get
+            {
+                return context.AuthToken;
+            }
+
+            set
+            {
+                context.AuthToken = value;
             }
         }
 
@@ -49,7 +63,7 @@ namespace Sharpbase
 
         public Task<Result> SetAsync(object obj)
         {
-            return client.Set(path, obj);
+            return client.Set(path, obj, AuthToken);
         }
 
         public void Remove(Action complete = null)
@@ -61,7 +75,7 @@ namespace Sharpbase
 
         public Task RemoveAsync()
         {
-            return client.Remove(path);
+            return client.Remove(path, AuthToken);
         }
 
         public Firebase Push(object obj = null)
@@ -71,7 +85,7 @@ namespace Sharpbase
 
         public async Task<Firebase> PushAsync(object obj = null)
         {
-            Result result = await client.Push(path, obj);
+            Result result = await client.Push(path, obj, AuthToken);
             if (!result.Success)
                 throw result.Error.Exception;
 
@@ -82,12 +96,7 @@ namespace Sharpbase
 
         public Firebase Child(string childPath)
         {
-            return new Firebase(client, path.Child(new Path(childPath)));
-        }
-
-        public void AuthWithCustomToken(string token, Action<Error, AuthData> complete = null)
-        {
-
+            return new Firebase(this, path.Child(new Path(childPath)));
         }
     }
 
