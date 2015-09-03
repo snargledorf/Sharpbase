@@ -35,6 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EventListener.cs" />
     <Compile Include="Exceptions\AuthDeniedException.cs" />
     <Compile Include="AuthToken.cs" />
     <Compile Include="Context.cs" />

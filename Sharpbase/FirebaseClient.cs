@@ -43,6 +43,16 @@ namespace Sharpbase
             return SendRequest(HttpMethod.Put, path, token, obj);
         }
 
+        public void AddValueChangedListener(Path path, Action<Snapshot> listener)
+        {
+
+        }
+
+        public void RemoveEventListener(Path path, Action<Snapshot> listener)
+        {
+            throw new NotImplementedException();
+        }
+
         private static HttpClient CreateHttpClient(Uri baseUri)
         {
             var messageHandler = new HttpClientHandler

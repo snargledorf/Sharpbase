@@ -5,8 +5,6 @@ namespace Sharpbase
 {
     public partial class Firebase
     {
-        private readonly Path path;
-
         private readonly IContext context;
 
         private IFirebaseClient client;
@@ -30,16 +28,12 @@ namespace Sharpbase
         {
             this.client = client;
             this.context = context;
-            this.path = path;
+            Path = path;
         }
 
-        public string Key
-        {
-            get
-            {
-                return path.LastSegment;
-            }
-        }
+        public string Key => Path.LastSegment;
+
+        internal Path Path { get; }
 
         public AuthToken AuthToken
         {
@@ -53,29 +47,39 @@ namespace Sharpbase
                 context.AuthToken = value;
             }
         }
+        
+        public event Action<Snapshot> ValueChanged
+        {
+            add
+            {
+                client.AddValueChangedListener(Path, value);
+            }
+            remove
+            {
+                client.RemoveEventListener(Path, value);
+            }
+        }
 
         public void Set(object obj, Action<Error, Firebase> complete = null)
         {
             Result result = SetAsync(obj).Result;
-            if (complete != null)
-                complete(result.Error, this);
+            complete?.Invoke(result.Error, this);
         }
 
         public Task<Result> SetAsync(object obj)
         {
-            return client.Set(path, obj, AuthToken);
+            return client.Set(Path, obj, AuthToken);
         }
 
         public void Remove(Action complete = null)
         {
             RemoveAsync().Wait();
-            if (complete != null)
-                complete();
+            complete?.Invoke();
         }
 
         public Task RemoveAsync()
         {
-            return client.Remove(path, AuthToken);
+            return client.Remove(Path, AuthToken);
         }
 
         public Firebase Push(object obj = null)
@@ -85,7 +89,7 @@ namespace Sharpbase
 
         public async Task<Firebase> PushAsync(object obj = null)
         {
-            Result result = await client.Push(path, obj, AuthToken);
+            Result result = await client.Push(Path, obj, AuthToken);
             if (!result.Success)
                 throw result.Error.Exception;
 
@@ -96,7 +100,7 @@ namespace Sharpbase
 
         public Firebase Child(string childPath)
         {
-            return new Firebase(this, path.Child(new Path(childPath)));
+            return new Firebase(this, Path.Child(new Path(childPath)));
         }
     }
 
@@ -118,7 +122,7 @@ namespace Sharpbase
             {
                 IFirebaseClient c = client;
                 client = null;
-                if (c != null) c.Dispose();
+                c?.Dispose();
             }
 
             disposed = true;

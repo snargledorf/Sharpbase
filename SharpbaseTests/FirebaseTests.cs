@@ -41,8 +41,8 @@ namespace SharpbaseTests
         {
             Firebase childRef = firebase.Child(TestData.DefaultChild);
 
-            Assert.IsNotNull(childRef);
-            Assert.AreEqual(TestData.DefaultChild, childRef.Key);
+            Assert.IsNotNull(childRef, "childRef != null");
+            Assert.AreEqual(TestData.DefaultChild, childRef.Key, TestData.DefaultChild + " == childReg.Key");
         }
 
         [TestMethod]
@@ -50,8 +50,8 @@ namespace SharpbaseTests
         {
             Firebase pushRef = firebase.Child(TestData.DefaultChild).Push();
 
-            Assert.IsNotNull(pushRef);
-            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
+            Assert.IsNotNull(pushRef, "pushRef != null");
+            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key), "string.IsNullOrEmpty(pushRef.Key)");
         }
 
         [TestMethod]
@@ -59,8 +59,8 @@ namespace SharpbaseTests
         {
             Firebase pushRef = await firebase.Child(TestData.DefaultChild).PushAsync();
 
-            Assert.IsNotNull(pushRef);
-            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
+            Assert.IsNotNull(pushRef, "pushRef != null");
+            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key), "string.IsNullOrEmpty(pushRef.Key)");
         }
 
         [TestMethod]
@@ -68,8 +68,8 @@ namespace SharpbaseTests
         {
             Firebase pushRef = firebase.Child(TestData.DefaultChild).Push(user);
 
-            Assert.IsNotNull(pushRef);
-            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
+            Assert.IsNotNull(pushRef, "pushRef != null");
+            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key), "string.IsNullOrEmpty(pushRef.Key)");
         }
 
         [TestMethod]
@@ -77,8 +77,8 @@ namespace SharpbaseTests
         {
             Firebase pushRef = await firebase.Child(TestData.DefaultChild).PushAsync(user);
 
-            Assert.IsNotNull(pushRef);
-            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key));
+            Assert.IsNotNull(pushRef, "pushRef != null");
+            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key), "string.IsNullOrEmpty(pushRef.Key)");
         }
 
         [TestMethod]
@@ -98,12 +98,13 @@ namespace SharpbaseTests
                         reset.Set();
                     });
 
-            reset.Wait();
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
 
-            Assert.IsNull(error);
-            Assert.IsNotNull(childRef);
-            Assert.IsNotNull(childRef.Key);
-            Assert.AreEqual(TestData.DefaultChild, childRef.Key);
+            Assert.IsFalse(timedOut, "timedOut");
+            Assert.IsNull(error, "error != null");
+            Assert.IsNotNull(childRef, "childRef != null");
+            Assert.IsNotNull(childRef.Key, "childRef.Key != null");
+            Assert.AreEqual(TestData.DefaultChild, childRef.Key, TestData.DefaultChild + " == childRef.Key");
         }
 
         [TestMethod]
@@ -133,8 +134,31 @@ namespace SharpbaseTests
             firebase.AuthToken = new AuthToken(TestData.Secret);
             Firebase push = firebase.Child(TestData.ProtectedChild).Push();
 
-            Assert.IsNotNull(push);
-            Assert.IsFalse(string.IsNullOrEmpty(push.Key));
+            Assert.IsNotNull(push, "push != null");
+            Assert.IsFalse(string.IsNullOrEmpty(push.Key), "string.IsNullOrEmpty(push.Key)");
+        }
+
+        [TestMethod]
+        public void ValueChanged()
+        {
+            var reset = new ManualResetEventSlim();
+
+            Firebase child = firebase.Child(TestData.DefaultChild);
+
+            child.Set(true);
+
+            Snapshot snap = null;
+            child.ValueChanged += snapshot =>
+            {
+                snap = snapshot;
+                reset.Set();
+            };
+
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
+
+            Assert.IsFalse(timedOut, "timedOut");
+            Assert.IsNotNull(snap, "snap != null");
+            Assert.IsTrue(snap.Value<bool>(), "snap.Value<bool>()");
         }
     }
 }
