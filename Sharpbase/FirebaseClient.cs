@@ -41,19 +41,14 @@ namespace Sharpbase
             return PerformRequest(request);
         }
 
-        public async Task<Firebase> Push(Firebase reference, object content = null)
+        public Task<Result> Push(Firebase reference, object content = null)
         {
             CheckDisposed();
 
             ArgUtils.CheckForNull(reference, nameof(reference));
 
             var request = new PushRequest(reference, content);
-
-            Result result = await PerformRequest(request);
-            if (!result.Success)
-                throw result.Error;
-
-            return result.Reference;
+            return PerformRequest(request);
         }
 
         public async void AddEventListener(IEventContract contract)

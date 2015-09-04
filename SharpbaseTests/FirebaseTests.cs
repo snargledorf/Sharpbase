@@ -57,10 +57,11 @@ namespace SharpbaseTests
         [TestMethod]
         public async Task PushAsync()
         {
-            Firebase pushRef = await firebase.Child(TestData.DefaultChild).PushAsync();
+            Result result = await firebase.Child(TestData.DefaultChild).PushAsync();
 
-            Assert.IsNotNull(pushRef, "pushRef != null");
-            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key), "string.IsNullOrEmpty(pushRef.Key)");
+            Assert.IsNotNull(result, "result != null");
+            Assert.IsNotNull(result.Reference, "result.Reference != null");
+            Assert.IsFalse(string.IsNullOrEmpty(result.Reference.Key), "string.IsNullOrEmpty(pushRef.Key)");
         }
 
         [TestMethod]
@@ -75,10 +76,11 @@ namespace SharpbaseTests
         [TestMethod]
         public async Task PushAsyncValue()
         {
-            Firebase pushRef = await firebase.Child(TestData.DefaultChild).PushAsync(user);
+            Result result = await firebase.Child(TestData.DefaultChild).PushAsync(user);
 
-            Assert.IsNotNull(pushRef, "pushRef != null");
-            Assert.IsFalse(string.IsNullOrEmpty(pushRef.Key), "string.IsNullOrEmpty(pushRef.Key)");
+            Assert.IsNotNull(result, "result = null");
+            Assert.IsNotNull(result.Reference, "result.Reference != null");
+            Assert.IsFalse(string.IsNullOrEmpty(result.Reference.Key), "string.IsNullOrEmpty(pushRef.Reference.Key)");
         }
 
         [TestMethod]
@@ -111,21 +113,16 @@ namespace SharpbaseTests
         [ExpectedException(typeof(AuthDeniedException))]
         public void WriteToProtected()
         {
-            try
-            {
-                firebase.Child(TestData.ProtectedChild).Push();
-            }
-            catch (Exception e)
-            {
-                throw e.InnerException;
-            }
+            firebase.Child(TestData.ProtectedChild).Push();
         }
 
         [TestMethod]
-        [ExpectedException(typeof(AuthDeniedException))]
         public async Task WriteToProtectedAsync()
         {
-            await firebase.Child(TestData.ProtectedChild).PushAsync();
+            Result result = await firebase.Child(TestData.ProtectedChild).PushAsync();
+
+            Assert.IsNotNull(result.Error, "result.Error != null");
+            Assert.IsInstanceOfType(result.Error, typeof(AuthDeniedException), "result.Error.GetType() == typeof(AuthDeniedException)");
         }
 
         [TestMethod]

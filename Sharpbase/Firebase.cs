@@ -32,7 +32,6 @@ namespace Sharpbase
 
         public delegate void ValueChangedEvent(ValueChangedEventArgs snapshot);
         public delegate void ChildAddedEvent(ChildAddedEventArgs snapshot);
-        public delegate void CompleteAction(FirebaseException firebaseException, Firebase reference);
 
         public string Key => Path.LastSegment;
 
@@ -81,9 +80,18 @@ namespace Sharpbase
             }
         }
 
-        public void Set(object obj, CompleteAction complete = null)
+        public Firebase Set(object content)
         {
-            Result result = SetAsync(obj).Result;
+            Result result = SetAsync(content).Result;
+            if (!result.Success)
+                throw result.Error;
+
+            return result.Reference;
+        }
+
+        public async void Set(object content, Action<FirebaseException, Firebase> complete)
+        {
+            Result result = await SetAsync(content);
             complete?.Invoke(result.Error, result.Reference);
         }
 
@@ -92,9 +100,18 @@ namespace Sharpbase
             return client.Set(this, content);
         }
 
-        public void Remove(CompleteAction complete = null)
+        public Firebase Remove()
         {
             Result result = RemoveAsync().Result;
+            if (!result.Success)
+                throw result.Error;
+
+            return result.Reference;
+        }
+
+        public async void Remove(Action<FirebaseException, Firebase> complete)
+        {
+            Result result = await RemoveAsync();
             complete?.Invoke(result.Error, result.Reference);
         }
 
@@ -105,10 +122,25 @@ namespace Sharpbase
 
         public Firebase Push(object content = null)
         {
-            return PushAsync(content).Result;
+            Result result = PushAsync(content).Result;
+            if (!result.Success)
+                throw result.Error;
+
+            return result.Reference;
         }
 
-        public Task<Firebase> PushAsync(object content = null)
+        public void Push(Action<FirebaseException, Firebase> complete)
+        {
+            Push(null, complete);
+        }
+        
+        public async void Push(object content, Action<FirebaseException, Firebase> complete)
+        {
+            Result result = await PushAsync(content);
+            complete?.Invoke(result.Error, result.Reference);
+        }
+
+        public Task<Result> PushAsync(object content = null)
         {
             return client.Push(this, content);
         }
