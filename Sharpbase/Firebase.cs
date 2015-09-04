@@ -108,9 +108,9 @@ namespace Sharpbase
             return PushAsync(content).Result;
         }
 
-        public async Task<Firebase> PushAsync(object content = null)
+        public Task<Firebase> PushAsync(object content = null)
         {
-            return await client.Push(this, content);
+            return client.Push(this, content);
         }
 
         public Firebase Child(string childPath)
