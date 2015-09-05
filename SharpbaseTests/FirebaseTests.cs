@@ -70,7 +70,7 @@ namespace SharpbaseTests
                     reset.Set();
                 });
 
-            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(5));
 
             Assert.IsFalse(timedOut, "timedOut");
             Assert.IsNull(callbackError);
@@ -114,7 +114,7 @@ namespace SharpbaseTests
                 reset.Set();
             });
 
-            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(5));
 
             Assert.IsFalse(timedOut, "timedOut");
             Assert.IsNull(callbackError);
@@ -150,7 +150,7 @@ namespace SharpbaseTests
                         reset.Set();
                     });
 
-            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(5));
 
             Assert.IsFalse(timedOut, "timedOut");
             Assert.IsNull(error, "error != null");
@@ -183,75 +183,6 @@ namespace SharpbaseTests
 
             Assert.IsNotNull(push, "push != null");
             Assert.IsFalse(string.IsNullOrEmpty(push.Key), "string.IsNullOrEmpty(push.Key)");
-        }
-
-        [TestMethod]
-        public void ValueChanged()
-        {
-            var reset = new ManualResetEventSlim();
-
-            Firebase child = firebase.Child(TestData.DefaultChild);
-
-            child.Set(true);
-
-            ValueChangedEventArgs a = null;
-
-            Firebase.ValueChangedEvent @event = (args) =>
-            {
-                if (args.Snapshot.Reference == child)
-                {
-                    a = args;
-                    reset.Set();
-                }
-            };
-
-            child.ValueChanged += @event;
-
-            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
-
-            child.ValueChanged -= @event;
-
-            Assert.IsFalse(timedOut, "timedOut");
-            CheckChangeEventArgs(child, a);
-        }
-
-        [TestMethod]
-        public void ChildAdded()
-        {
-            var reset = new ManualResetEventSlim();
-
-            Firebase child = firebase.Child(TestData.DefaultChild);
-
-            child.Set(true);
-
-            ChildAddedEventArgs a = null;
-
-            Firebase.ChildAddedEvent @event = (args) =>
-            {
-                a = args;
-                reset.Set();
-            };
-
-            child.ChildAdded += @event;
-
-            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
-
-            child.ChildAdded -= @event;
-
-            Assert.IsFalse(timedOut, "timedOut");
-            CheckChangeEventArgs(child, a);
-        }
-
-        private static void CheckChangeEventArgs(Firebase reference, ChangeEventArgs args)
-        {
-            Assert.IsNull(args.FirebaseException, "a.FirebaseException == null");
-            Assert.IsNotNull(args, "a != null");
-            Assert.IsNotNull(args.Snapshot, "a.Snapshot != null");
-            Assert.AreEqual(reference, args.Snapshot.Reference, "child == a.Snapshot.Reference");
-            Assert.AreEqual(reference.Key, args.Snapshot.Key, "child.Key == a.Snapshot.Key");
-            Assert.AreEqual(reference.Key, args.Snapshot.Key, "child.Key == a.Snapshot.Key");
-            Assert.IsTrue(args.Snapshot.Exists);
-            Assert.IsTrue(args.Snapshot.Value<bool>(), "snap.Value<bool>()");
         }
     }
 }
