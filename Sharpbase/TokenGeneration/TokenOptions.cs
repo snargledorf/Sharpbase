@@ -6,14 +6,6 @@ namespace Sharpbase.TokenGeneration
     {
         public static TokenOptions Empty = new TokenOptions();
 
-        private DateTime? notBefore;
-
-        private readonly DateTime? expires;
-
-        private readonly bool admin;
-
-        private readonly bool debug;
-
         /// <summary>
         /// Constructor.  All options are optional.
         /// </summary>
@@ -27,47 +19,19 @@ namespace Sharpbase.TokenGeneration
             bool admin = false,
             bool debug = false)
         {
-            this.notBefore = notBefore;
-            this.expires = expires;
-            this.admin = admin;
-            this.debug = debug;
+            NotBefore = notBefore;
+            Expires = expires;
+            Admin = admin;
+            Debug = debug;
         }
 
-        public DateTime? Expires
-        {
-            get
-            {
-                return expires;
-            }
-        }
+        public DateTime? Expires { get; }
 
-        public DateTime? NotBefore
-        {
-            get
-            {
-                return notBefore;
-            }
-            private set
-            {
-                notBefore = value;
-            }
-        }
+        public DateTime? NotBefore { get; private set; }
 
-        public bool Admin
-        {
-            get
-            {
-                return admin;
-            }
-        }
+        public bool Admin { get; }
 
-        public bool Debug
-        {
-            get
-            {
-                return debug;
-            }
-        }
+        public bool Debug { get; }
 
         public static bool operator ==(TokenOptions left, TokenOptions right)
         {
@@ -81,8 +45,8 @@ namespace Sharpbase.TokenGeneration
 
         public bool Equals(TokenOptions other)
         {
-            return notBefore.Equals(other.notBefore) && expires.Equals(other.expires) && admin == other.admin
-                   && debug == other.debug;
+            return NotBefore.Equals(other.NotBefore) && Expires.Equals(other.Expires) && Admin == other.Admin
+                   && Debug == other.Debug;
         }
 
         public override bool Equals(object obj)
@@ -98,10 +62,10 @@ namespace Sharpbase.TokenGeneration
         {
             unchecked
             {
-                int hashCode = notBefore.GetHashCode();
-                hashCode = (hashCode * 397) ^ expires.GetHashCode();
-                hashCode = (hashCode * 397) ^ admin.GetHashCode();
-                hashCode = (hashCode * 397) ^ debug.GetHashCode();
+                int hashCode = NotBefore.GetHashCode();
+                hashCode = (hashCode * 397) ^ Expires.GetHashCode();
+                hashCode = (hashCode * 397) ^ Admin.GetHashCode();
+                hashCode = (hashCode * 397) ^ Debug.GetHashCode();
                 return hashCode;
             }
         }

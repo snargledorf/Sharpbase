@@ -37,9 +37,11 @@ namespace Sharpbase.TokenGeneration
                 throw new Exception(
                     "data is empty and no options are set.  This token will have no effect on Firebase.");
 
-            var claims = new Dictionary<string, object>();
-            claims["v"] = TokenVersion;
-            claims["iat"] = SecondsSinceEpoch(DateTime.Now);
+            var claims = new Dictionary<string, object>
+            {
+                ["v"] = TokenVersion,
+                ["iat"] = SecondsSinceEpoch(DateTime.Now)
+            };
 
             bool isAdminToken = (options != TokenOptions.Empty && options.Admin);
             ValidateToken(data, isAdminToken);
