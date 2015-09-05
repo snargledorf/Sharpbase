@@ -1,64 +1,149 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-
+using System.Diagnostics;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace Sharpbase.JsonSerilization.JsonDotNetSerializer
 {
     internal class JsonDotNetJsonNode : IJsonNode
     {
-        private readonly JToken token;
-
-        public JsonDotNetJsonNode(JToken token, IJsonNode parent = null)
+        private readonly JToken value;
+        
+        private JsonDotNetJsonNode(JToken value, string key = null)
+            : this(JsonDotNetNodeCollection.Empty, value, key)
         {
-            this.token = token;
-            Parent = parent;
-            Properties = CreateJsonNodeCollection(token);
         }
 
-        private IJsonNodeCollection CreateJsonNodeCollection(JToken token)
+        private JsonDotNetJsonNode(IJsonNodeCollection children, JToken value = null, string key = null)
         {
-            var jsonNodeCollection = new JsonNodeCollection();
-            foreach (JToken subToken in token.Children())
+            Children = children;
+            this.value = value;
+            Key = key;
+
+            SetChildrenParent();
+        }
+
+        public string Key { get; }
+        
+        public IJsonNode Parent { get; private set; }
+
+        public IJsonNodeCollection Children { get; }
+
+        public static JsonDotNetJsonNode Parse(string json)
+        {
+            JObject obj = JObject.Parse(json);
+            return ParseToken(obj);
+        }
+
+        private static JsonDotNetJsonNode ParseToken(JToken token)
+        {
+            switch (token.Type)
             {
-                var node = new JsonDotNetJsonNode(subToken, this);
-                jsonNodeCollection.Add(node);
+                case JTokenType.Object:
+                    IJsonNodeCollection children = ParseChildren(token);
+                    return new JsonDotNetJsonNode(children, token);
+                case JTokenType.Array:
+                    IJsonNodeCollection items = ParseArrayItems(token);
+                    return new JsonDotNetJsonNode(items);
             }
-            return jsonNodeCollection;
+
+            return new JsonDotNetJsonNode(token);
         }
 
-        public IJsonNode Property(string name)
+        private static IJsonNodeCollection ParseChildren(JToken parent)
         {
-            return Properties[name];
+            IJsonNode[] nodes = parent.Cast<KeyValuePair<string, JToken>>().Select(ParseToken).ToArray();
+            return new JsonDotNetNodeCollection(nodes);
         }
 
-        public bool HasValue => !token.HasValues;
+        private static IJsonNode ParseToken(KeyValuePair<string, JToken> token)
+        {
+            string key = token.Key;
+            switch (token.Value.Type)
+            {
+                case JTokenType.Object:
+                    IJsonNodeCollection children = ParseChildren(token.Value);
+                    return new JsonDotNetJsonNode(children, token.Value, key);
+                case JTokenType.Array:
+                    IJsonNodeCollection items = ParseArrayItems(token.Value);
+                    return new JsonDotNetJsonNode(items, key: key);
+            }
 
-        public IJsonNode Parent { get; }
+            return new JsonDotNetJsonNode(token.Value, key);
+        }
 
-        public IJsonNodeCollection Properties { get; }
+        private static IJsonNodeCollection ParseArrayItems(JToken token)
+        {
+            JsonDotNetJsonNode[] items = token.Select(ParseToken).ToArray();
+            return new JsonDotNetNodeCollection(items);
+        }
 
-        public string Name => token.Path;
+        public T Value<T>() => value.ToObject<T>();
 
-        public T Value<T>() => token.Value<T>();
-    }
+        public IEnumerator<IJsonNode> GetEnumerator()
+        {
+            return Children.GetEnumerator();
+        }
 
-    internal class JsonNodeCollection : IJsonNodeCollection
-    {
-        private readonly Dictionary<string, IJsonNode> nodes = new Dictionary<string, IJsonNode>();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
 
-        public IEnumerator<IJsonNode> GetEnumerator() => nodes.Values.GetEnumerator();
+        public override string ToString()
+        {
+            return ToJson();
+        }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public string ToJson()
+        {
+            string json = ValueToJson();
 
-        public int Count => nodes.Count;
+            if (string.IsNullOrEmpty(Key))
+                return json;
 
-        public IJsonNode this[string name] => GetNode(name);
+            return $"{Key}: {json}";
+        }
 
-        public IJsonNode GetNode(string name) => nodes[name];
+        private string ValueToJson()
+        {
+            if (Children.Count != 0)
+            {
+                if (value != null)
+                    return CreateObjectJsonString();
 
-        public bool ContainsNode(string name) => nodes.ContainsKey(name);
+                return CreateArrayJsonString();
+            }
 
-        public void Add(IJsonNode node) => nodes.Add(node.Name, node);
+            Debug.Assert(value != null);
+
+            switch (value.Type)
+            {
+                case JTokenType.String:
+                    return $"\"{value}\"";
+            }
+
+            return value.ToString();
+        }
+
+        private string CreateArrayJsonString()
+        {
+            return $"[ {string.Join(", ", Children)} ]";
+        }
+
+        private string CreateObjectJsonString()
+        {
+            return $"{{ {string.Join(", ", Children)} }}";
+        }
+
+        private void SetChildrenParent()
+        {
+            foreach (IJsonNode jsonNode in Children)
+            {
+                var child = (JsonDotNetJsonNode)jsonNode;
+                child.Parent = this;
+            }
+        }
     }
 }

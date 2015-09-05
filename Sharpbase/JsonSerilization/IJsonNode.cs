@@ -1,17 +1,17 @@
-﻿namespace Sharpbase.JsonSerilization
+﻿using System.Collections.Generic;
+
+namespace Sharpbase.JsonSerilization
 {
-    public interface IJsonNode
+    public interface IJsonNode : IEnumerable<IJsonNode>
     {
-        string Name { get; }
-
-        IJsonNode Property(string name);
-
-        bool HasValue { get; }
+        string Key { get; }
 
         IJsonNode Parent { get; }
 
-        IJsonNodeCollection Properties { get; }
+        IJsonNodeCollection Children { get; }
 
         T Value<T>();
+
+        string ToJson();
     }
 }

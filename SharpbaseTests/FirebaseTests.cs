@@ -55,6 +55,31 @@ namespace SharpbaseTests
         }
 
         [TestMethod]
+        public void PushCallback()
+        {
+            var reset = new ManualResetEventSlim();
+
+            Firebase child = firebase.Child(TestData.DefaultChild);
+            FirebaseException callbackError = null;
+            Firebase callbackRef = null;
+
+            child.Push((error, reference) =>
+                {
+                    callbackRef = reference;
+                    callbackError = error;
+                    reset.Set();
+                });
+
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
+
+            Assert.IsFalse(timedOut, "timedOut");
+            Assert.IsNull(callbackError);
+            Assert.IsNotNull(callbackRef);
+            Assert.IsFalse(string.IsNullOrEmpty(callbackRef.Key));
+            Assert.AreNotEqual(child, callbackRef);
+        }
+
+        [TestMethod]
         public async Task PushAsync()
         {
             Result result = await firebase.Child(TestData.DefaultChild).PushAsync();
@@ -74,7 +99,32 @@ namespace SharpbaseTests
         }
 
         [TestMethod]
-        public async Task PushAsyncValue()
+        public void PushValueCallback()
+        {
+            var reset = new ManualResetEventSlim();
+
+            Firebase child = firebase.Child(TestData.DefaultChild);
+            FirebaseException callbackError = null;
+            Firebase callbackRef = null;
+
+            child.Push(user, (error, reference) =>
+            {
+                callbackRef = reference;
+                callbackError = error;
+                reset.Set();
+            });
+
+            bool timedOut = !reset.Wait(TimeSpan.FromSeconds(10));
+
+            Assert.IsFalse(timedOut, "timedOut");
+            Assert.IsNull(callbackError);
+            Assert.IsNotNull(callbackRef);
+            Assert.IsFalse(string.IsNullOrEmpty(callbackRef.Key));
+            Assert.AreNotEqual(child, callbackRef);
+        }
+
+        [TestMethod]
+        public async Task PushValueAsync()
         {
             Result result = await firebase.Child(TestData.DefaultChild).PushAsync(user);
 

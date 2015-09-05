@@ -55,6 +55,7 @@
     <Compile Include="JsonSerilization\IJsonNode.cs" />
     <Compile Include="JsonSerilization\IJsonNodeCollection.cs" />
     <Compile Include="JsonSerilization\JsonDotNetSerializer\JsonDotNetJsonNode.cs" />
+    <Compile Include="JsonSerilization\JsonDotNetSerializer\JsonDotNetNodeCollection.cs" />
     <Compile Include="PushRequest.cs" />
     <Compile Include="Request.cs" />
     <Compile Include="TokenGeneration\FirebaseTokenGenerator.cs" />

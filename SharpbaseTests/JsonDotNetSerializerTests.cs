@@ -21,78 +21,53 @@ namespace SharpbaseTests
         [TestMethod]
         public void DeserializeKnownType()
         {
-            const string Name = "User 0";
-            const string Json = "{name:\"User 0\" }";
-
-            var nameHolder = serializer.Deserialize<NameHolder>(Json);
+            var nameHolder = serializer.Deserialize<NameObject>("{name:\"User 0\" }");
 
             Assert.IsNotNull(nameHolder);
-            Assert.AreEqual(Name, nameHolder.Name);
-        }
-
-        [TestMethod]
-        public void DeserializeKnownTypeAnonymously()
-        {
-            const string Name = "User 0";
-            const string Json = "{name:\"User 0\" }";
-
-            IJsonNode tree = serializer.Deserialize(Json);
-
-            IJsonNode nameNode = tree.Property("name");
-            string name = nameNode.Value<string>();
-
-            Assert.IsNotNull(tree);
-            Assert.IsTrue(nameNode.HasValue);
-            Assert.AreEqual(Name, name);
-        }
-
-        [TestMethod]
-        public void DeserializeUnknownType()
-        {
-            const string Name = "User 0";
-            const int Age = 25;
-            const string Json = "{name:\"User 0\", age: 25 }";
-
-            IJsonNode tree = serializer.Deserialize(Json);
-
-            IJsonNode nameNode = tree.Property("name");
-            var name = nameNode.Value<string>();
-
-            IJsonNode ageNode = tree.Property("age");
-            var age = ageNode.Value<int>();
-            
-            Assert.IsTrue(nameNode.HasValue);
-            Assert.AreEqual(Name, name);
-            Assert.IsTrue(ageNode.HasValue);
-            Assert.AreEqual(Age, age);
-        }
-
-        [TestMethod]
-        public void NodeParent()
-        {
-            const string Json = "{name:\"User 0\"}";
-
-            IJsonNode tree = serializer.Deserialize(Json);
-            IJsonNode nameNode = tree.Property("name");
-            
-            Assert.AreEqual(tree, nameNode.Parent);
+            Assert.AreEqual("User 0", nameHolder.Name);
         }
 
         [TestMethod]
         public void Children()
         {
-            const string Json = "{name:\"User 0\"}";
+            IJsonNode tree = serializer.Deserialize("{name:\"User 0\"}");
 
+            IJsonNodeCollection children = tree.Children;
+            IJsonNode nameNode = children["name"];
+            var name = nameNode.Value<string>();
+
+            Assert.AreEqual("User 0", name);
+        }
+
+        [TestMethod]
+        public void Array()
+        {
+            const string Json = "{ objects: [ 1, 3, { name: \"User 0\" } ] }";
             IJsonNode tree = serializer.Deserialize(Json);
 
-            IJsonNodeCollection properties = tree.Properties;
+            IJsonNode objectsNode = tree.Children["objects"];
 
-            Assert.IsNotNull(properties);
-            Assert.AreEqual(1, properties.Count);
+            var firstObject = objectsNode.Children[0].Value<int>();
+            var secondObject = objectsNode.Children[1].Value<int>();
+            string thirdObject = objectsNode.Children[2].Value<NameObject>().Name;
+
+            Assert.AreEqual(1, firstObject);
+            Assert.AreEqual(3, secondObject);
+            Assert.AreEqual("User 0", thirdObject);
+        }
+
+        [TestMethod]
+        public void ToJson()
+        {
+            const string Json = "{ objects: [ 1, 3, { name: \"User 0\" } ] }";
+            IJsonNode tree = serializer.Deserialize(Json);
+            string json = tree.ToJson();
+
+            Assert.AreEqual(Json, json);
         }
     }
 
-    public class NameHolder
+    public class NameObject
     {
         public string Name { get; set; }
     }

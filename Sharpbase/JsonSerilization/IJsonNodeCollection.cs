@@ -6,10 +6,9 @@ namespace Sharpbase.JsonSerilization
     {
         int Count { get; }
 
-        IJsonNode this[string name] { get; }
+        IJsonNode this[string key] { get; }
+        IJsonNode this[int index] { get; }
 
-        IJsonNode GetNode(string name);
-
-        bool ContainsNode(string name);
+        bool ContainsNode(string key);
     }
 }
