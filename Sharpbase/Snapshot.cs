@@ -4,31 +4,22 @@ namespace Sharpbase
 {
     public class Snapshot
     {
-        private readonly string json;
-
-        private readonly IContext context;
-
-        public Snapshot(string json, IContext context, Firebase reference)
+        public Snapshot(IJsonObject jsonObject, Firebase reference)
         {
+            JsonObject = jsonObject;
             Reference = reference;
-            this.json = json;
-            this.context = context;
         }
 
         public Firebase Reference { get; set; }
 
         public string Key => Reference.Key;
 
-        public bool Exists => !string.IsNullOrEmpty(json);
+        public bool Exists => JsonObject.IsNull;
 
-        public T Value<T>()
-        {
-            return Exists ? context.Serializer.Deserialize<T>(json) : default(T);
-        }
+        public T Value<T>() => JsonObject.Value<T>();
 
-        public IJsonNode Value()
-        {
-            return Exists ? context.Serializer.Deserialize(json) : null;
-        }
+        public object Value() => JsonObject.Value();
+
+        public IJsonObject JsonObject { get; }
     }
 }

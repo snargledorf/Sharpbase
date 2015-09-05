@@ -145,6 +145,22 @@ namespace Sharpbase
             return client.Push(this, content);
         }
 
+        public Snapshot Get()
+        {
+            return GetAsync().Result.Snapshot;
+        }
+
+        public async void Get(Action<FirebaseException, Snapshot> complete)
+        {
+            SnapshotResult result = await GetAsync();
+            complete?.Invoke(result.Error, result.Snapshot);
+        }
+
+        private Task<SnapshotResult> GetAsync()
+        {
+            return client.Get(this);
+        }
+
         public Firebase Child(string childPath)
         {
             return new Firebase(client, Path.Child(new Path(childPath)));

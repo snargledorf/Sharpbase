@@ -2,12 +2,12 @@
 
 namespace Sharpbase.JsonSerilization
 {
-    public interface IJsonNodeCollection : IEnumerable<IJsonNode>
+    public interface IJsonNodeCollection : IEnumerable<IJsonObject>
     {
         int Count { get; }
 
-        IJsonNode this[string key] { get; }
-        IJsonNode this[int index] { get; }
+        IJsonObject this[string key] { get; }
+        IJsonObject this[int index] { get; }
 
         bool ContainsNode(string key);
     }

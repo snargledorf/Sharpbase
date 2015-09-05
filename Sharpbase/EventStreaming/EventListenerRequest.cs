@@ -69,7 +69,7 @@ namespace Sharpbase.EventStreaming
 
                         string eventName = ParseEventLine(eventLine);
                         string json = ParseEventLine(dataLine);
-                        IJsonNode tree = context.Serializer.Deserialize(json);
+                        IJsonObject tree = context.Serializer.Deserialize(json);
                     }
                     else
                     {

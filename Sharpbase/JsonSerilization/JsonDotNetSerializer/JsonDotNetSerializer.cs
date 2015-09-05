@@ -10,9 +10,9 @@ namespace Sharpbase.JsonSerilization.JsonDotNetSerializer
             return JsonConvert.DeserializeObject<T>(json);
         }
 
-        public IJsonNode Deserialize(string json)
+        public IJsonObject Deserialize(string json)
         {
-            return JsonDotNetJsonNode.Parse(json);
+            return JsonDotNetJsonObject.Parse(json);
         }
 
         public string Serialize(object obj)

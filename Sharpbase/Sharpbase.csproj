@@ -52,12 +52,14 @@
     <Compile Include="FirebaseEventArgs.cs" />
     <Compile Include="EventStreaming\IEventContract.cs" />
     <Compile Include="FirebaseUrl.cs" />
-    <Compile Include="JsonSerilization\IJsonNode.cs" />
+    <Compile Include="GetRequest.cs" />
+    <Compile Include="JsonSerilization\IJsonObject.cs" />
     <Compile Include="JsonSerilization\IJsonNodeCollection.cs" />
-    <Compile Include="JsonSerilization\JsonDotNetSerializer\JsonDotNetJsonNode.cs" />
+    <Compile Include="JsonSerilization\JsonDotNetSerializer\JsonDotNetJsonObject.cs" />
     <Compile Include="JsonSerilization\JsonDotNetSerializer\JsonDotNetNodeCollection.cs" />
     <Compile Include="PushRequest.cs" />
     <Compile Include="Request.cs" />
+    <Compile Include="SnapshotResult.cs" />
     <Compile Include="TokenGeneration\FirebaseTokenGenerator.cs" />
     <Compile Include="IContext.cs" />
     <Compile Include="IFirebaseClient.cs" />

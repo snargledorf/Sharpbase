@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Sharpbase;
-using Sharpbase.EventStreaming;
 using Sharpbase.Exceptions;
 
 namespace SharpbaseTests
@@ -183,6 +182,70 @@ namespace SharpbaseTests
 
             Assert.IsNotNull(push, "push != null");
             Assert.IsFalse(string.IsNullOrEmpty(push.Key), "string.IsNullOrEmpty(push.Key)");
+        }
+
+        [TestMethod]
+        public void GetValue()
+        {
+            Firebase child = firebase.Child(TestData.DefaultChild);
+            child.Set(true);
+
+            Snapshot snapshot = child.Get();
+            Firebase reference = snapshot.Reference;
+            var value = snapshot.Value<bool>();
+
+            Assert.AreEqual(child, reference);
+            Assert.IsTrue(value);
+        }
+
+        [TestMethod]
+        public void GetObjectValue()
+        {
+            Firebase child = firebase.Child(TestData.DefaultChild);
+            child.Set(true);
+
+            Snapshot snapshot = child.Get();
+            Firebase reference = snapshot.Reference;
+            object value = snapshot.Value();
+
+            Assert.AreEqual(child, reference);
+            Assert.AreEqual(true, value);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void GetNullValueNonNullableType()
+        {
+            firebase
+                .Child(TestData.DefaultChild)
+                .Get()
+                .Value<bool>();
+        }
+
+        [TestMethod]
+        public void GetNullValueNullableType()
+        {
+            Firebase child = firebase.Child(TestData.DefaultChild);
+
+            Snapshot snapshot = child.Get();
+            Firebase reference = snapshot.Reference;
+            var value = snapshot.Value<bool?>();
+
+            Assert.AreEqual(child, reference);
+            Assert.IsNull(value);
+        }
+
+        [TestMethod]
+        public void GetNullObjectValue()
+        {
+            Firebase child = firebase.Child(TestData.DefaultChild);
+
+            Snapshot snapshot = child.Get();
+            Firebase reference = snapshot.Reference;
+            object value = snapshot.Value();
+
+            Assert.AreEqual(child, reference);
+            Assert.IsNull(value);
         }
     }
 }

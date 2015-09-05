@@ -6,18 +6,18 @@ namespace Sharpbase.JsonSerilization.JsonDotNetSerializer
 {
     internal class JsonDotNetNodeCollection : IJsonNodeCollection
     {
-        private static readonly IJsonNode[] EmptyNodesArray = new IJsonNode[0];
+        private static readonly IJsonObject[] EmptyObjectsArray = new IJsonObject[0];
 
-        public static readonly JsonDotNetNodeCollection Empty = new JsonDotNetNodeCollection(EmptyNodesArray);
+        public static readonly JsonDotNetNodeCollection Empty = new JsonDotNetNodeCollection(EmptyObjectsArray);
 
-        private readonly ICollection<IJsonNode> nodes;
+        private readonly ICollection<IJsonObject> nodes;
 
-        public JsonDotNetNodeCollection(ICollection<IJsonNode> nodes)
+        public JsonDotNetNodeCollection(ICollection<IJsonObject> nodes)
         {
             this.nodes = nodes;
         }
         
-        public IEnumerator<IJsonNode> GetEnumerator()
+        public IEnumerator<IJsonObject> GetEnumerator()
         {
             return nodes.GetEnumerator();
         }
@@ -29,9 +29,9 @@ namespace Sharpbase.JsonSerilization.JsonDotNetSerializer
 
         public int Count => nodes.Count;
 
-        public IJsonNode this[string key] => nodes.FirstOrDefault(node => node.Key.Equals(key));
+        public IJsonObject this[string key] => nodes.FirstOrDefault(node => node.Key.Equals(key));
 
-        IJsonNode IJsonNodeCollection.this[int index] => nodes.ElementAt(index);
+        IJsonObject IJsonNodeCollection.this[int index] => nodes.ElementAt(index);
 
         public bool ContainsNode(string key) => nodes.Any(node => node.Key.Equals(key));
     }

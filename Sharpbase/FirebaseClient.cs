@@ -51,6 +51,14 @@ namespace Sharpbase
             return PerformRequest(request);
         }
 
+        public async Task<SnapshotResult> Get(Firebase reference)
+        {
+            CheckDisposed();
+
+            var request = new GetRequest(reference);
+            return await PerformRequest(request) as SnapshotResult;
+        }
+
         public async void AddEventListener(IEventContract contract)
         {
             CheckDisposed();
